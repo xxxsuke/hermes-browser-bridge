@@ -1,8 +1,11 @@
 # Hermes Browser Bridge
 
-让 AI 直接操控你的浏览器——读页面、点按钮、填表单、截图、搜书签、管下载。
+操控你的浏览器，两种方式任选：
 
-**不需要 WSL，不需要 Linux，纯 Windows 方案。** 装好 Python 就能用。
+- **🧠 AI Agent 模式** — 配合 Hermes Agent，说句话就让 AI 自动搜、读、配图、修网络
+- **⌨️ 命令行模式** — 纯 Windows CMD，`python hermes_client.py` 手动操控
+
+**不需要 WSL，不需要 Linux，装好 Python 就能用。**
 
 ---
 
@@ -21,22 +24,35 @@
 
 ## 它能做什么
 
+### 🧠 AI Agent 模式（配合 Hermes Agent，推荐）
+
+对 Hermes 说一句话，Agent 自动搞定：
+
 ```
-你要做的事情                  怎么操作
-─────────────────────────────────────────────────
-列出所有打开的标签页          list_tabs
-在百度搜索"天气"             navigate + write_text + click
-读取当前页面全部文字          read_text
-截图当前页面                 screenshot
-下载一个文件                 download
-Ctrl+F 在页面搜索关键词       find_in_page
-新建窗口打开小红书           create_window
-写博客/发帖（在已登录网站）    write_text + click
-关掉某个标签页               close_tab
-清除浏览器缓存               clear_data
+你说的话                          Agent 做的事
+─────────────────────────────────────────────────────────
+"帮我搜一下今天AI圈有什么新闻"     自动搜索多平台 → 筛选相关文章 → 滚动到底读完 → 截图留存
+"给这篇文章找3张配图"             自动搜头条图片 → 提取高分辨率图 → vision验证内容匹配 → 下载
+"网又断了，看看怎么回事"           5层递进诊断 → 定位到Clash残留 → 自动修复 → 验证恢复
+"搜一下鸿蒙最新版本的评测"         多引擎搜索 → 点进原文 → 读完 → 判断完整性 → 返回摘要
 ```
 
-**关键区别：** 它不是新开一个自动化浏览器，而是**操控你正在用的 Edge/Chrome 窗口**。你登录过的网站（小红书、知乎、微博）直接用，不需要再登录。
+### ⌨️ 命令行模式（Windows CMD 直接跑）
+
+```cmd
+操作                          命令
+────────────────────────────────────────────
+列出所有标签页                python hermes_client.py list_tabs
+搜索并打开网页                python hermes_client.py navigate "https://baidu.com/s?wd=天气"
+读取页面文字                  python hermes_client.py read_text
+截图                          python hermes_client.py screenshot
+填写表单/发帖                 python hermes_client.py write_text "#title" "我的标题"
+下载文件                      python hermes_client.py download "https://example.com/file.pdf"
+新建窗口                      python hermes_client.py create_window "https://xiaohongshu.com"
+Ctrl+F 搜索                   python hermes_client.py find_in_page "关键词"
+```
+
+**关键区别：** 它不是新开一个自动化浏览器，而是**操控你正在用的 Edge/Chrome 窗口**。你登录过的网站（小红书、知乎、微博）直接用，不需要再登录。配合 Hermes Agent 时，AI 自己会判断什么时候搜索、什么时候换引擎、什么时候开代理——你只需要说你要什么。
 
 ---
 
