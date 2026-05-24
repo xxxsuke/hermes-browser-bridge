@@ -111,7 +111,6 @@ python bridge.py
 ╔══════════════════════════════════════════╗
 ║     Hermes Browser Bridge v5             ║
 ║     WebSocket: ws://localhost:9876       ║
-║     HTTP polling: http://localhost:9877  ║
 ╚══════════════════════════════════════════╝
 ```
 
@@ -471,9 +470,9 @@ hermes-browser-bridge/
 
 ### 1️⃣ MV3 Service Worker 30 秒断连
 
-Service Worker 空闲 30 秒就会被浏览器杀掉。WebSocket 连接随之断开。
+Service Worker 空闲 30 秒就会被浏览器杀掉，WebSocket 连接随之断开。
 
-**解决：** 仅用 HTTP 轮询。扩展每 2 秒 `fetch("http://localhost:9877/poll")`，bridge 返回待处理命令。HTTP 请求本身就能唤醒 SW，不需要 WebSocket 心跳。
+**解决（v6）：** offscreen 文档 + alarms 双保活。offscreen 页面持有 WebSocket 持久连接（不受 SW 生命周期影响），`chrome.alarms` 每 3 秒唤醒 SW 确保响应。两个机制互补：alarms 保证 SW 存活，offscreen 保证 WS 不断。
 
 ### 2️⃣ Content script 必须加消息监听器
 
