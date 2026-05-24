@@ -382,19 +382,29 @@ taskkill /PID <那个数字> /F
 ### 快速安装
 
 ```bash
-# 将 skill 文件复制到 Hermes 的 skills 目录
-cp -r skills/* ~/.hermes/skills/
+# 创建 skill 目录并复制（三个 skill 文件）
+mkdir -p ~/.hermes/skills/automation/browser-control/
+cp skills/browser-control.md ~/.hermes/skills/automation/browser-control/SKILL.md
+
+mkdir -p ~/.hermes/skills/automation/browser-bridge/
+cp skills/browser-bridge.md ~/.hermes/skills/automation/browser-bridge/SKILL.md
+
+# browser-bridge-extension 是英文开发参考，可选
+mkdir -p ~/.hermes/skills/automation/browser-bridge-extension/
+cp skills/browser-bridge-extension.md ~/.hermes/skills/automation/browser-bridge-extension/SKILL.md
 ```
 
-### 统一入口：hermes-browser-control（推荐）
+> ⚠️ **已有 browser-bridge 的用户**：如果你已经在用旧版 skill，安装前先备份 `~/.hermes/skills/automation/browser-*`，避免覆盖本地修改。
 
-**日常浏览器操作只需要加载一个 skill：`hermes-browser-control`。**
+### 统一入口：browser-control（推荐）
+
+**日常浏览器操作只需要加载一个 skill：`browser-control`。**
 
 它覆盖了：WS 命令封装、代理自动管理、多平台搜索、内容研究流水线、图片提取验证、网络诊断。
 
 Hermes 里说"帮我搜一下xxx"或"找张配图"，Agent 会自动加载 browser-control。
 
-### 底层参考：hermes-browser-bridge
+### 底层参考：browser-bridge
 
 仅在调试桥接本身（WS 断连、扩展不响应）时才需要加载。包含完整的架构说明、命令列表、踩坑记录。
 
@@ -457,8 +467,8 @@ hermes-browser-bridge/
 │   ├── popup.js           # 扩展弹窗逻辑
 │   └── icons/             # 扩展图标（16/48/128）
 └── skills/                # Hermes Agent Skill 文件（选装）
-    ├── hermes-browser-control.md
-    ├── hermes-browser-bridge.md
+    ├── browser-control.md
+    ├── browser-bridge.md
     └── browser-bridge-extension.md
 ```
 

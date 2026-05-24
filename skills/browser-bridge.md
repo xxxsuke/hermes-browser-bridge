@@ -1,6 +1,6 @@
 ---
-name: hermes-browser-bridge
-description: [底层参考] Hermes 浏览器桥接 — WS 协议/扩展通信/安装部署/架构/踩坑记录。日常操作请用 hermes-browser-control 统一入口，本 skill 仅调试桥接本身时加载。
+name: browser-bridge
+description: [底层参考] Hermes 浏览器桥接 — WS 协议/扩展通信/安装部署/架构/踩坑记录。日常操作请用 browser-control 统一入口，本 skill 仅调试桥接本身时加载。
 version: 1.3.0
 category: automation
 platforms: [windows, wsl, linux]

@@ -1,6 +1,6 @@
 ---
-name: hermes-browser-control
-description: 浏览器统一控制入口 — WS 连接、代理管理、多平台搜索、内容研究、图片提取、网络诊断。一次加载覆盖所有浏览器操作，不再需要分别加载 bridge 和 operations。
+name: browser-control
+description: 浏览器统一控制入口 — WS 连接、代理管理、多平台搜索、内容研究、图片提取、网络诊断。一次加载覆盖所有浏览器操作。
 version: 3.0.0
 category: automation
 tags: [browser, proxy, search, images, network, content-research, unified]
@@ -15,7 +15,7 @@ triggers:
 
 **一个 skill 覆盖所有浏览器操作。** 不再需要分别加载 `browser-bridge` 和 `browser-operations`。
 
-底层依赖：hermes-browser-bridge（bridge.py + 扩展），深入调试时参考 `hermes-browser-bridge` skill（架构/项目结构/踩坑记录/故障排查）。
+底层依赖：hermes-browser-bridge（bridge.py + 扩展），深入调试时参考 `browser-bridge` skill（架构/项目结构/踩坑记录/故障排查）。
 
 ---
 
@@ -248,5 +248,5 @@ await cmd(ws, 'close_window', {'windowId': wid})
 
 ## 九、与旧 skill 的关系
 
-- **hermes-browser-bridge** → 底层参考（安装/架构/踩坑记录），日常不需要加载
-- **本 skill（hermes-browser-control）** → 日常唯一入口，覆盖所有浏览器操作
+- **browser-bridge** → 底层参考（安装/架构/踩坑记录），日常不需要加载
+- **本 skill（browser-control）** → 日常唯一入口，覆盖所有浏览器操作
