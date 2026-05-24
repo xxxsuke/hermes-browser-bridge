@@ -362,7 +362,28 @@ taskkill /PID <那个数字> /F
 
 ## 与 Hermes Agent 集成
 
-如果你在使用 [Hermes Agent](https://hermes-agent.nousresearch.com/)（本地 AI Agent 框架），可以直接让 Agent 操控浏览器：
+如果你在使用 [Hermes Agent](https://hermes-agent.nousresearch.com/)（本地 AI Agent 框架），项目附带了 Hermes Skill 文件（在 `skills/` 目录下）。
+
+### 快速安装
+
+```bash
+# 将 skill 文件复制到 Hermes 的 skills 目录
+cp -r skills/* ~/.hermes/skills/
+```
+
+### 统一入口：hermes-browser-control（推荐）
+
+**日常浏览器操作只需要加载一个 skill：`hermes-browser-control`。**
+
+它覆盖了：WS 命令封装、代理自动管理、多平台搜索、内容研究流水线、图片提取验证、网络诊断。
+
+Hermes 里说"帮我搜一下xxx"或"找张配图"，Agent 会自动加载 browser-control。
+
+### 底层参考：hermes-browser-bridge
+
+仅在调试桥接本身（WS 断连、扩展不响应）时才需要加载。包含完整的架构说明、命令列表、踩坑记录。
+
+### 调用示例
 
 ```python
 from hermes_tools import terminal
@@ -379,14 +400,6 @@ terminal("python3 ~/hermes-browser-bridge/hermes_client.py write_text '#title' '
 # 截图
 terminal("python3 ~/hermes-browser-bridge/hermes_client.py screenshot", timeout=15)
 ```
-
-项目附带了 3 个 Hermes Skill 文件（在 `skills/` 目录下），复制到 `~/.hermes/skills/` 即可让 Hermes 识别：
-
-```bash
-cp -r skills/* ~/.hermes/skills/
-```
-
-然后 Hermes Agent 里输入 `/skills` 就能看到它们。
 
 ---
 

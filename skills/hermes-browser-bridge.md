@@ -1,7 +1,7 @@
 ---
 name: hermes-browser-bridge
-description: 通过 Edge/Chrome 扩展让 Hermes 直接操控用户正在浏览的页面——读写、点击、键盘、搜索、截图、书签、历史、下载、DevTools。通过 WebSocket 桥接，适用于所有需要登录的网站。
-version: 1.2.0
+description: [底层参考] Hermes 浏览器桥接 — WS 协议/扩展通信/安装部署/架构/踩坑记录。日常操作请用 hermes-browser-control 统一入口，本 skill 仅调试桥接本身时加载。
+version: 1.3.0
 category: automation
 platforms: [windows, wsl, linux]
 metadata:

@@ -1,43 +1,61 @@
 ---
 name: hermes-browser-control
-description: 像人一样操控 Edge/Chrome。独立窗口、多平台搜索、自动登录、下载、提取图片、代理自动管理、视频帧分析。
-version: 2.1.0
+description: 浏览器统一控制入口 — WS 连接、代理管理、多平台搜索、内容研究、图片提取、网络诊断。一次加载覆盖所有浏览器操作，不再需要分别加载 bridge 和 operations。
+version: 3.0.0
+category: automation
+tags: [browser, proxy, search, images, network, content-research, unified]
 triggers:
-  - 浏览器控制
-  - 打开网页
-  - 搜索
-  - 下载
-  - 登录
-  - 提取图片
-  - 代理
-  - 翻墙
+  - 浏览器操作 / 打开网页 / 搜索 / 截图
+  - 写文章 / 搜素材 / 配图 / 提取图片
+  - 代理 / 翻墙 / 网络不通
+  - 任何需要操控浏览器的任务
 ---
 
-# Hermes Browser Control Skill v2.1
+# Browser Control — 浏览器统一入口 v3
 
-像人一样操控浏览器：搜索、登录、下载、提取、截图、关窗。**自动代理管理：选节点、开系统代理、用完即关。**
+**一个 skill 覆盖所有浏览器操作。** 不再需要分别加载 `browser-bridge` 和 `browser-operations`。
 
-## 架构
-
-```
-Hermes (WSL) → ws://localhost:9876 → bridge.py (Windows) → offscreen.js → background.js → Edge
-                                     ↕ Clash API (9090) + 注册表代理开关
-```
-
-## 核心原则
-
-1. **单窗口** — 用完关，再开新
-2. **≤10 标签**
-3. **网络问题先诊断**
-4. **代理按需开关** — 访问国际站时开系统代理，用完关。Clash 后台一直跑。
+底层依赖：hermes-browser-bridge（bridge.py + 扩展），深入调试时参考 `hermes-browser-bridge` skill（架构/项目结构/踩坑记录/故障排查）。
 
 ---
 
-## 一、代理自动管理（按需开关）
+## 零、速查：WS 命令封装
+
+所有浏览器操作的基础。直接复制使用：
+
+```python
+import asyncio, json, websockets
+
+async def cmd(ws, action, params=None, tab_id=None, timeout=15):
+    rid = f't_{int(__import__("time").time()*1000)}'
+    await ws.send(json.dumps({'type':'command','id':rid,'action':action,'tabId':tab_id,'params':params or {}}))
+    return json.loads(await asyncio.wait_for(ws.recv(), timeout=timeout))
+
+async def main():
+    async with websockets.connect('ws://localhost:9876') as ws:
+        await ws.send(json.dumps({'type':'register','client':'hermes'}))
+        await asyncio.wait_for(ws.recv(), timeout=5)
+        # ... 你的操作 ...
+```
+
+全部命令：`list_tabs` `activate_tab` `new_tab` `close_tab` `reload_tab` `navigate` `read_text` `read_html` `click` `scroll` `screenshot` `get_images` `get_links` `type_text` `key_press` `create_window` `close_window` `list_windows`
+
+---
+
+## 一、铁律（违反必出事）
+
+1. **close_window 必须用 windowId** — 从 create_window 返回值取，禁止通过 tabId 反查
+2. **新标签先 reload** — navigate 后 reload_tab 等 3s，确保 content.js 注入
+3. **独立窗口，用完即关** — create_window 干活，完事 close_window
+4. **标签 ≤ 10 个**
+5. **代理按需开关** — 默认直连，国际站自动开，用完即关
+6. **NO_PROXY=localhost** — 代理排除 localhost，否则劫持 WS
+
+---
+
+## 二、代理自动管理
 
 **原则：默认直连，访问国际站时自动开全局代理，用完即关。**
-
-### 判断是否需要代理
 
 ```python
 def need_proxy(url):
@@ -47,91 +65,188 @@ def need_proxy(url):
     from urllib.parse import urlparse
     domain = urlparse(url).netloc.lower()
     return any(d in domain for d in intl)
+
+# 开代理
+subprocess.run(['python3','~/hermes-browser-bridge/proxy_manager.py','on'])
+await asyncio.sleep(2)
+
+# 关代理
+subprocess.run(['python3','~/hermes-browser-bridge/proxy_manager.py','off'])
 ```
 
-### 自动开关
+---
 
-```bash
-# 开 — 系统代理 + Clash 全局模式
-python3 ~/hermes-browser-bridge/proxy_manager.py on
+## 三、多平台搜索
 
-# 关 — 直连 + Clash 规则模式
-python3 ~/hermes-browser-bridge/proxy_manager.py off
+### 国内（直连）
+
+| 平台 | URL 模板 | 备注 |
+|------|----------|------|
+| 搜狗 | `sogou.com/web?query={}` | 中文最佳 |
+| 头条搜索 | `so.toutiao.com/search?keyword={}` | |
+| 头条图片 | `so.toutiao.com/search?keyword={}&tab=image` | **配图首选** |
+| 小红书 | `xiaohongshu.com/search_result?keyword={}` | |
+| 微博 | `s.weibo.com/weibo?q={}` | |
+| B站 | `search.bilibili.com/all?keyword={}` | |
+| 百度 | `baidu.com/s?wd={}` | ⚠️ 验证码多 |
+| 知乎 | `zhihu.com/search?type=content&q={}` | ⚠️ 反爬 |
+
+### 国际（需代理）
+
+| 平台 | URL 模板 |
+|------|----------|
+| GitHub | `github.com/search?q={}&type=repositories` |
+| X/Twitter | `x.com/search?q={}` |
+| YouTube | `youtube.com/results?search_query={}` |
+
+---
+
+## 四、内容研究流水线
+
+```
+开独立窗口 → 多引擎搜索 → 筛选文章 → 点进原文 → 滚动到底 → 提取配图 → 判断完整性 → 截图取证 → 关窗
 ```
 
-### 使用流程
+### 点进原文 + 滚动
 
 ```python
-if need_proxy(target_url):
-    subprocess.run(['python3','~/hermes-browser-bridge/proxy_manager.py','on'])
-    await asyncio.sleep(2)
+await cmd(ws, 'click', {'selector': '.result h3 a'}, tab)
+await asyncio.sleep(5)
+r = await cmd(ws, 'list_tabs')
+art_tab = r['tabs'][-1]['id']
 
-# ... 访问网站 ...
+for i in range(25):
+    rr = await cmd(ws, 'scroll', {'direction':'down','amount':800}, art_tab)
+    if rr.get('scrollY',0) >= rr.get('maxScroll',99999)-100:
+        break
 
-if need_proxy(target_url):
-    subprocess.run(['python3','~/hermes-browser-bridge/proxy_manager.py','off'])
+r = await cmd(ws, 'read_text', {'maxLength': 20000}, art_tab)
 ```
 
-**不做手动开关，不做常开。**
+### 完整性判断（检查最后 300 字）
 
----
-
-## 二、多平台搜索
-
-| 平台 | 搜索 URL | 需要代理 |
-|------|----------|----------|
-| 百度 | `baidu.com/s?wd=` | ❌ |
-| 搜狗 | `sogou.com/web?query=` | ❌ |
-| 小红书 | `xiaohongshu.com/search_result?keyword=` | ❌ |
-| 微博 | `s.weibo.com/weibo?q=` | ❌ |
-| 抖音 | `douyin.com/search/` | ❌ |
-| 知乎 | `zhihu.com/search?type=content&q=` | ❌ |
-| B站 | `search.bilibili.com/all?keyword=` | ❌ |
-| GitHub | `github.com/search?q=` | ⚠️ 可能需要 |
-| X/Twitter | `x.com/search?q=` | ✅ |
-| TikTok | `tiktok.com/search?q=` | ✅ |
-| YouTube | `youtube.com/results?search_query=` | ✅ |
-
----
-
-## 三、登录流程
-
-填表→点击→检测验证码→截图通知用户。遇到人机验证立即通知，不硬闯。
-
-## 四、图片提取与文件下载
-
-get_images → 过滤 avatar/icon → download 保存。支持 PDF/文档 URL 下载。
-
-## 五、视频帧分析
-
-打开视频页 → 每 N 秒截图 → vision_analyze 逐帧识别 → 拼成故事板。YouTube 可配合 transcript API 拿字幕。
-
-## 六、命令速查
-
-### 窗口标签
-create_window / close_window / close_tab / list_tabs / new_tab / activate_tab / reload_tab / navigate
-
-### 页面读写
-read_text / read_html / read_element / get_links / get_images / scroll
-
-### 鼠标键盘
-click / double_click / right_click / hover / drag / write_text / key_press / type_text / find_in_page
-
-### 导航工具
-go_back / go_forward / set_zoom / get_zoom / print
-
-### 下载书签
-download / list_downloads / create_bookmark / remove_bookmark / search_bookmarks
-
-### 数据
-screenshot / search_history / list_bookmarks / list_windows / get_tab_info / clear_data
-
-## 七、网络诊断
-
-| 问题 | 修复 |
+| 标识 | 判断 |
 |------|------|
-| MiWiFi劫持 | DNS→114 + flushdns |
-| SSL错误 | ntpdate 同步时间 |
+| `举报` `版权` `免责声明` `界面新闻` `转载` `作者` | ✅ 完整 |
+| 广告推荐 / 相关阅读 / 热搜榜 | ⚠️ 截断 |
+| `展开全文` `阅读更多` | ❌ 需点击展开 |
+
+### 引用铁律
+
+- 真实来源，不编造
+- 所有数据、排名、事实必须来自打开过的原文
+- 每篇文章至少截 2 张图留存
+
+---
+
+## 五、图片提取与配图
+
+### 图片源优先级
+
+| 优先级 | 来源 | 可靠性 |
+|--------|------|:---:|
+| **1** | 头条图片搜索 (`so.toutiao.com?tab=image`) | ✅ |
+| 2 | 非 SPA 新闻站原文 | ✅ |
+| 3 | Pollinations AI 生成 | ⚠️ 15% 成功率 |
+| 4 | HTML 卡片（1200x800 截图） | ✅ 兜底 |
+
+### 千万别做的事
+
+- ❌ 点进头条文章详情页提取图片（SPA，get_images 返回空）
+- ❌ 用 Bing 图片（只有缩略图 200-346px）
+- ❌ 用百度图片（验证码地狱）
+
+### 头条图片搜索流程
+
+```python
+from urllib.parse import quote
+url = f"https://so.toutiao.com/search?keyword={quote(keyword)}&tab=image"
+# 用 Hermes 内置 browser_navigate + browser_get_images
+# Python 端手动过滤：尺寸≥200 + 黑名单域名
+# 下载到 D:\Download\article-images\
+```
+
+### 图片验证铁律
+
+1. **必须用 vision_analyze 验证** — 不能用标题/alt 猜测
+2. **不匹配果断换源**
+
+---
+
+## 六、网络诊断（5 层递进）
+
+用户说"网不通"时按顺序走：
+
+```bash
+# Layer 1: 网络存活？
+ping -c 2 -W 2 192.168.31.1
+nslookup baidu.com
+
+# Layer 2: 直连可达？
+env -u http_proxy -u https_proxy curl -sI --connect-timeout 5 https://www.baidu.com
+
+# Layer 3: 代理端口？
+ss -tlnp | grep 7897
+
+# Layer 4: Windows 系统代理
+powershell.exe -Command "Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' | Select-Object ProxyEnable,ProxyServer | Format-List"
+
+# Layer 5: WSL2 环境变量
+env | grep -iE "http_proxy|https_proxy|all_proxy"
+```
+
+### 常见修复
+
+**Clash Verge ProxyServer 残留**（关闭代理后仍无法上网）：
+```bash
+powershell.exe -Command "Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' -Name ProxyServer -Value ''"
+```
+然后完全退出浏览器重开。
+
+**MiWiFi 劫持**（跳到 miwifi.com）：
+```bash
+sudo bash -c 'echo "nameserver 114.114.114.114" > /etc/resolv.conf'
+powershell.exe -Command "ipconfig /flushdns"
+```
+
+---
+
+## 七、独立窗口模板
+
+```python
+# 开窗
+r = await cmd(ws, 'create_window', {'url': 'https://目标'})
+wid = r['windowId']
+tid = r['tabId']
+
+# 干活...
+await cmd(ws, 'reload_tab', {}, tid)
+await asyncio.sleep(3)
+
+# 关窗（必须用 windowId！）
+await cmd(ws, 'close_window', {'windowId': wid})
+```
+
+---
+
+## 八、故障速查
+
+| 问题 | 处理 |
+|------|------|
 | 桥接挂了 | 重启 Windows bridge.py |
-| 代理不可用 | 检查 Clash:9090 |
-| Edge 打不开 | 检查系统代理设置 |
+| `injection failed` / 0字 | reload_tab + 等 3s |
+| 截图失败 | debugger API 自动兜底 |
+| WS 连接失败 | bridge.py 未运行，检查 `ss -tlnp \| grep 9876` |
+| 搜索结果不显示 | 换搜索引擎 |
+| 劫持/WLAN | 立即停止，DNS→114 |
+| 验证码 | 截图通知用户，不硬闯 |
+| 图片全被过滤 | 换头条图片搜索 |
+| SPA 页面返回空 | 不要 reload，换非 SPA 站 |
+| vision_analyze 说配图不匹配 | 换源 |
+
+---
+
+## 九、与旧 skill 的关系
+
+- **hermes-browser-bridge** → 底层参考（安装/架构/踩坑记录），日常不需要加载
+- **本 skill（hermes-browser-control）** → 日常唯一入口，覆盖所有浏览器操作
