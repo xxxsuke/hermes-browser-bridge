@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { width: 240px; padding: 12px; font-family: system-ui; font-size: 14px; }
+    .status { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .dot.on { background: #22c55e; }
+    .dot.off { background: #ef4444; }
+    h2 { margin: 0; font-size: 16px; }
+    p { color: #666; font-size: 12px; margin: 4px 0; }
+    .info { background: #f3f4f6; padding: 8px; border-radius: 6px; font-size: 11px; color: #333; margin-top: 8px; }
+    code { background: #e5e7eb; padding: 1px 4px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <div class="status">
+    <span class="dot on" id="statusDot"></span>
+    <h2>Hermes Bridge</h2>
+  </div>
+  <p>让 AI 直接操作浏览器页面</p>
+  <div class="info">
+    连接: <code id="connection">已连接</code><br>
+    端口: <code>ws://localhost:9876</code>
+  </div>
+  <div class="info" style="margin-top:4px">
+    当前页面: <span id="currentPage">-</span>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
