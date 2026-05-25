@@ -164,7 +164,7 @@ function writeText(params) {
   const el = document.querySelector(selector);
   if (!el) return { error: `element not found: ${selector}` };
   
-  if (el.isContentEditable || el.tagName === 'TEXTAREA' || 
+  if (el.tagName === 'TEXTAREA' || 
       (el.tagName === 'INPUT' && ['text', 'search', 'email', 'url', 'password', ''].includes(el.type || 'text'))) {
     
     el.focus();
@@ -175,6 +175,19 @@ function writeText(params) {
     const newVal = mode === 'append' ? (el.value || '') + (text || '') : (text || '');
     nativeSetter.call(el, newVal);
     
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  } else if (el.isContentEditable) {
+    el.focus();
+    // 用 execCommand 插入文本（兼容 Jodit 等富文本编辑器）
+    const sel = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    if (mode === 'append') range.collapse(false);
+    else range.deleteContents();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand('insertText', false, text || '');
     el.dispatchEvent(new Event('input', { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
   } else {
