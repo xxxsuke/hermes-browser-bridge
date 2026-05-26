@@ -26,3 +26,4 @@ Thumbs.db
 
 # 环境变量（包含 token）
 .env
+CLAUDE.md
