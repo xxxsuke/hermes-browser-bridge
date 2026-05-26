@@ -212,7 +212,15 @@ python hermes_client.py hover <selector>                  # 悬停
 python hermes_client.py write_text <selector> <text>       # 填写输入框
 python hermes_client.py type_text <selector> <text>        # 逐字输入（模拟打字）
 python hermes_client.py find_in_page <query>               # 页面内搜索
+python hermes_client.py dismiss_popups                     # 自动关闭弹窗/遮罩/Cookie
 ```
+
+**`dismiss_popups` 弹窗清理：** 页面被弹窗遮挡时使用。5 层策略自动执行：
+1. 匹配关闭按钮文本（× / 关闭 / 跳过 / Accept 等）
+2. 匹配 `aria-label`（close / dismiss）
+3. 移除高 z-index 遮罩层
+4. 模拟按 ESC 键
+5. 清理 Cookie / GDPR 弹窗（.cookie-banner 等）
 
 **选择器（selector）示例：**
 
@@ -372,6 +380,16 @@ taskkill /PID <那个数字> /F
 ```
 
 或者直接用 `start_bridge.ps1`（会自动处理端口冲突）。
+
+### ❌ 页面被弹窗/广告/Cookie 遮挡
+
+**解决：** 一键清理——
+
+```cmd
+python hermes_client.py dismiss_popups
+```
+
+5 层策略（文本匹配 → aria-label → 遮罩移除 → ESC → Cookie清理），自动处理大多数弹窗。
 
 ### ❌ 修改了 manifest.json 后扩展不工作了
 
