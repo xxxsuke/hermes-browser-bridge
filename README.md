@@ -52,7 +52,9 @@
 Ctrl+F 搜索                   python hermes_client.py find_in_page "关键词"
 ```
 
-**关键区别：** 它不是新开一个自动化浏览器，而是**操控你正在用的 Edge/Chrome 窗口**。你登录过的网站（小红书、知乎、微博）直接用，不需要再登录。配合 Hermes Agent 时，AI 自己会判断什么时候搜索、什么时候换引擎、什么时候开代理——你只需要说你要什么。
+**关键区别：** 它不是新开一个自动化浏览器，而是**操控你正在用的 Edge/Chrome 窗口**。你登录过的网站（小红书、知乎、微博）直接用，不需要再登录。
+
+> ⚠️ **独立窗口原则：** AI Agent 操作时永远用 `create_window` 开新窗口，用完 `close_window` 关闭。**绝不在你正在工作的窗口里开标签页**——不会打扰你的正常浏览。
 
 ---
 
@@ -75,15 +77,15 @@ pip --version
 
 ### 第二步：下载项目
 
-下载 zip 包：https://github.com/hermes-bridge/hermes-browser-bridge/archive/refs/heads/main.zip
+下载 zip 包：https://github.com/xxxsuke/hermes-browser-bridge/archive/refs/heads/main.zip
 
-解压到桌面或者你喜欢的目录，比如 `C:\Users\你的用户名\Desktop\hermes-browser-bridge\`
+解压到桌面或者你喜欢的目录，比如 `C:\\Users\\你的用户名\\Desktop\\hermes-browser-bridge\\`
 
 或者在 CMD 里：
 
 ```cmd
 cd C:\Users\你的用户名\Desktop
-git clone https://github.com/hermes-bridge/hermes-browser-bridge.git
+git clone https://github.com/xxxsuke/hermes-browser-bridge.git
 ```
 
 （如果没有 git，去 https://git-scm.com/download/win 下载装一下）
@@ -109,12 +111,14 @@ python bridge.py
 
 ```
 ╔══════════════════════════════════════════╗
-║     Hermes Browser Bridge v5             ║
+║     Hermes Browser Bridge v6             ║
 ║     WebSocket: ws://localhost:9876       ║
 ╚══════════════════════════════════════════╝
 ```
 
 **⚠️ 这个窗口不要关，保持运行。** 后面所有的操作都需要它活着。
+
+> **一键启动（推荐）：** 不用手动开 CMD，直接双击 `start_bridge.ps1`，脚本会自动检测端口冲突、杀掉旧进程、验证扩展连接。
 
 > **防火墙弹窗？** Windows 可能会问是否允许 Python 通过防火墙 → 点「允许访问」。
 
@@ -350,7 +354,7 @@ netstat -ano | findstr :9876
 taskkill /PID <那个数字> /F
 ```
 
-或者更改 bridge.py 第 7 行的 `PORT = 9876` 为其他端口（比如 9875），同步修改 `offscreen.js` 里的端口号，然后重装扩展。
+或者直接用 `start_bridge.ps1`（会自动处理端口冲突）。
 
 ### ❌ 修改了 manifest.json 后扩展不工作了
 
@@ -450,9 +454,7 @@ python proxy_manager.py off    # 关闭系统代理 + Clash 规则模式
 
 ```
 hermes-browser-bridge/
-├── bridge.py              # [核心] WebSocket 桥接服务（跑在 Windows 上）
-├── hermes_client.py       # [核心] 命令行客户端 50+ 命令
-├── proxy_manager.py       # [选装] 代理自动开关（仅 Windows + Clash）
+├── bridge.py              # [核心] WebSocket 桥接服务 v6（心跳+内存清理）\n├── hermes_client.py       # [核心] 命令行客户端 50+ 命令\n├── start_bridge.ps1       # [推荐] 一键启动脚本 v2（智能端口检测）\n├── proxy_manager.py       # [选装] 代理自动开关（仅 Windows + Clash）
 ├── demo.py                # 演示 Python 脚本
 ├── gen_icons.py           # 扩展图标生成工具
 ├── INSTALL.md             # 安装指南（本文档）
@@ -483,6 +485,12 @@ hermes-browser-bridge/
 Service Worker 空闲 30 秒就会被浏览器杀掉，WebSocket 连接随之断开。
 
 **解决（v6）：** offscreen 文档 + alarms 双保活。offscreen 页面持有 WebSocket 持久连接（不受 SW 生命周期影响），`chrome.alarms` 每 3 秒唤醒 SW 确保响应。两个机制互补：alarms 保证 SW 存活，offscreen 保证 WS 不断。
+
+**v6 新增：**
+- 30s 心跳检测（bridge ↔ offscreen ping/pong）
+- 每 30s 清理超时 futures（>60s 未完成即释放）
+- `MAX_PENDING=200` 上限保护
+- offscreen 每 15s 更新 DOM title 防 Edge 休眠
 
 ### 2️⃣ Content script 必须加消息监听器
 
