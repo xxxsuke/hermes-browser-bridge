@@ -56,6 +56,20 @@ Ctrl+F 搜索                   python hermes_client.py find_in_page "关键词"
 
 > ⚠️ **独立窗口原则：** AI Agent 操作时永远用 `create_window` 开新窗口，用完 `close_window` 关闭。**绝不在你正在工作的窗口里开标签页**——不会打扰你的正常浏览。
 
+### 🔗 缝合工具链
+
+Bridge 是内容获取链路的最后一环。整个体系按场景分工：
+
+```
+轻量阅读       → Jina Reader (r.jina.ai)     URL→Markdown，零开销
+搜索+全文      → Jina Reader (s.jina.ai)     搜5条+抓全文，写作神器
+HTTP 抓取      → Scrapling get               自适应选择器，Python/CLI
+反爬/动态      → Scrapling stealthy-fetch    ⏳ Playwright 1.61.0 上线
+需要交互       → Browser Bridge ← 你在这里    登录/点击/截图，唯一方案
+```
+
+降级链：Jina → Scrapling → Browser Bridge（前一环失败自动切换下一环）
+
 ---
 
 ## 快速开始（3 分钟）
