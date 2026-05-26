@@ -367,6 +367,8 @@ bash ~/.hermes/skills/automation/browser-control/scripts/bridge-diag.sh
 
 输出：bridge 进程状态+内存、端口监听、扩展连接、Edge 进程 TOP5。
 
+**端口详细排查** → `references/port-diagnostics.md`（LISTEN/TIME_WAIT/PID=0 状态处理、手动诊断命令）
+
 ### 内存监控（手动） + 自动巡检 cron
 
 ```bash
