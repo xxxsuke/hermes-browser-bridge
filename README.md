@@ -68,6 +68,9 @@ HTTP 抓取      → Scrapling get               自适应选择器，Python/CLI
 需要交互       → Browser Bridge ← 你在这里    登录/点击/截图，唯一方案
 ```
 
+- [Jina Reader](https://jina.ai/reader) — 免费 API，URL 转 Markdown
+- [Scrapling](https://github.com/D4Vinci/Scrapling) — Python 爬虫框架，反反爬
+
 降级链：Jina → Scrapling → Browser Bridge（前一环失败自动切换下一环）
 
 ---
