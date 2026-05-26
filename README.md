@@ -15,6 +15,8 @@
 - [快速开始（3 分钟）](#快速开始3-分钟)
 - [命令大全](#命令大全)
 - [常见问题排查](#常见问题排查)
+- [bridge v6.1 新特性](#bridge-v61-新特性)
+- [hot_topics.py — 独立热点API](#hot_topicspy--独立热点api)
 - [与 Hermes Agent 集成](#与-hermes-agent-集成)
 - [代理自动管理（选装）](#代理自动管理选装)
 - [项目文件结构](#项目文件结构)
@@ -411,6 +413,50 @@ python hermes_client.py dismiss_popups
 **原因：** bridge.py 监听端口时触发了防火墙规则。
 
 **解决：** 点击「允许访问」。这是安全的——bridge 只在 localhost（本机）监听。
+
+---
+
+## bridge v6.1 新特性
+
+**原生命令**（无需扩展，bridge 直接执行 HTTP 请求）：
+
+```python
+# WS 协议调用，与 navigate/screenshot 同级
+# 需要 BRIDGE_SECRET 认证
+await ws.send(json.dumps({
+    "type": "command", "action": "toutiao_hot",
+    "params": {"limit": 10},
+    "secret": "hermes-bridge-v6"
+}))
+```
+
+| 命令 | 功能 | 认证 |
+|------|------|:---:|
+| `toutiao_hot` | 今日头条实时热搜榜 | ✅ secret |
+| `eastmoney_kuaixun` | 东方财富 7x24 快讯 | ✅ secret |
+
+**安全变更**：v6.1 强制 `BRIDGE_SECRET` 认证，默认值 `hermes-bridge-v6`，可通过环境变量 `BRIDGE_SECRET` 覆盖。
+
+---
+
+## hot_topics.py — 独立热点API
+
+纯 Python 零依赖模块，可直接喂给任何 AI（Cursor/Claude/Copilot）：
+
+```python
+from hot_topics import toutiao_hot, eastmoney_kuaixun
+
+for item in toutiao_hot(10):
+    print(f"{item['rank']}. {item['title']} | 热度:{item.get('hot_value',0):,}")
+```
+
+| 函数 | 数据源 | 需要API Key？ |
+|------|--------|:---:|
+| `toutiao_hot(limit)` | 今日头条热搜 | ❌ |
+| `eastmoney_kuaixun(limit, column)` | 东方财富快讯 | ❌ |
+| `sinafinance_news(limit)` | 新浪财经 | ❌ |
+
+已通过三轮安全审查（multi-perspective-review），详见文件头部蒸馏记录。
 
 ---
 
